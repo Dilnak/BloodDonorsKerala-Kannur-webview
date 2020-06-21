@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
+import android.webkit.WebBackForwardList;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -30,22 +32,23 @@ public class HomeActivity extends AppCompatActivity {
         webView = (WebView) findViewById(R.id.webview);
         webView.setWebViewClient(new WebViewClient() {
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
+
                 if (url.startsWith("tel:")) {
                     Intent intent = new Intent(Intent.ACTION_DIAL,
                             Uri.parse(url));
                     startActivity(intent);
-                }else if(url.startsWith("sms:")){
+                } else if (url.startsWith("sms:")) {
                     Intent intent = new Intent(Intent.ACTION_SENDTO);
                     String phoneNumber = url.split("[:?]")[1];
 
-                    if(!TextUtils.isEmpty(phoneNumber)){
+                    if (!TextUtils.isEmpty(phoneNumber)) {
                         // Set intent data
                         // This ensures only SMS apps respond
                         intent.setData(Uri.parse("smsto:" + phoneNumber));
 
                         // Alternate data scheme
                         //intent.setData(Uri.parse("sms:" + phoneNumber));
-                    }else {
+                    } else {
                         // If the sms link built without phone number
                         intent.setData(Uri.parse("smsto:"));
 
@@ -55,30 +58,28 @@ public class HomeActivity extends AppCompatActivity {
 
 
                     // Extract the sms body from sms url
-                    if(url.contains("body=")){
+                    if (url.contains("body=")) {
                         String smsBody = url.split("body=")[1];
 
                         // Encode the sms body
-                        try{
-                            smsBody = URLDecoder.decode(smsBody,"UTF-8");
-                        }catch (UnsupportedEncodingException e){
+                        try {
+                            smsBody = URLDecoder.decode(smsBody, "UTF-8");
+                        } catch (UnsupportedEncodingException e) {
                             e.printStackTrace();
                         }
 
-                        if(!TextUtils.isEmpty(smsBody)){
+                        if (!TextUtils.isEmpty(smsBody)) {
                             // Set intent body
-                            intent.putExtra("sms_body",smsBody);
+                            intent.putExtra("sms_body", smsBody);
                         }
                     }
 
-                    if(intent.resolveActivity(getPackageManager())!=null){
+                    if (intent.resolveActivity(getPackageManager()) != null) {
                         // Start the sms app
                         startActivity(intent);
                     }
 
-                }
-
-                else if (url.startsWith("http:") || url.startsWith("https:")) {
+                } else if (url.startsWith("http:") || url.startsWith("https:")) {
                     view.loadUrl(url);
                 }
                 return true;
@@ -119,8 +120,8 @@ public class HomeActivity extends AppCompatActivity {
         webSettings.getLoadsImagesAutomatically();
 
 
-         webSettings.setLoadWithOverviewMode(true);
-          webSettings.setUseWideViewPort(true);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(true);
         // webSettings.setAllowFileAccess(true);
         // webSettings.setAllowContentAccess(true);
 
@@ -131,7 +132,26 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onBackPressed () {
+    public void onBackPressed() {
+
+        WebBackForwardList list = webView.copyBackForwardList();
+
+        boolean canExit = false;
+
+        try {
+            String url = list.getCurrentItem().getUrl();
+            if (url.equals("http://www.bdktaliparamba.epizy.com/?i=1")) {
+                Toast.makeText(this, "here", Toast.LENGTH_SHORT).show();
+                canExit = true;
+            }
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+
+        if (canExit)    {
+            super.onBackPressed();
+        }
+
         if (webView.canGoBack()) {
             webView.goBack();
 
